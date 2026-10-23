@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>تحدي الـ 90 سؤالاً - سبيستون</title>
+    <meta name="theme-color" content="#0d0d0d">
+    <meta name="description" content="لعبة أسئلة سبيستون: 90 سؤالاً بثلاثة مستويات">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="تحدي سبيستون">
+    <style>
+        :root {
+            --white: #ffffff;
+            --gray: #888888;
+            --black: #000000;
+            --gold: #d4af37;
+            --card-w: 220px;
+            --card-h: 130px;
+        }
+        * { -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: #0d0d0d;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            margin: 0;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow-x: hidden;
+        }
+        h1 {
+            color: var(--gold);
+            margin: 20px 12px 30px;
+            text-align: center;
+            font-size: clamp(1.1rem, 4.5vw, 2rem);
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+        .table { display: flex; gap: 50px; perspective: 1200px; }
+        .stack-container { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .stack-label { font-weight: bold; padding: 5px 20px; border-radius: 15px; font-size: 0.9rem; border: 1px solid var(--gold); }
+        .label-white { background: var(--white); color: #000; }
+        .label-gray { background: var(--gray); color: #fff; }
+        .label-black { background: var(--black); color: var(--gold); }
+
+        .stack { position: relative; width: var(--card-w); height: var(--card-h); }
+        .card {
+            position: absolute; width: var(--card-w); height: var(--card-h); cursor: pointer;
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s;
+            transform-style: preserve-3d; border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+        }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+        .card.removed { transform: translateY(-600px) rotate(20deg); opacity: 0; pointer-events: none; }
+
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center; padding: 15px;
+            box-sizing: border-box; border-radius: 12px; text-align: center; font-size: 0.9rem; font-weight: bold;
+        }
+        .white-card .card-front { background: #fff; color: #000; }
+        .white-card .card-back { background: #f0f0f0; color: #d32f2f; transform: rotateY(180deg); border: 2px dashed #999; }
+        .gray-card .card-front { background: #777; color: #fff; }
+        .gray-card .card-back { background: #444; color: #ffeb3b; transform: rotateY(180deg); border: 2px dashed #777; }
+        .black-card .card-front { background: #1a1a1a; color: var(--gold); border: 1px solid var(--gold); }
+        .black-card .card-back { background: #000; color: #fff; transform: rotateY(180deg); border: 2px dashed var(--gold); }
+
+        .counter { font-size: 0.8rem; color: #888; margin-top: 5px; }
+
+        .reset {
+            margin: 30px 0 24px;
+            background: transparent; color: var(--gold);
+            border: 1px solid var(--gold); border-radius: 20px;
+            padding: 8px 24px; font: inherit; font-size: 0.9rem; cursor: pointer;
+        }
+        .reset:active { background: rgba(212, 175, 55, 0.15); }
+
+        /* الهاتف والشاشات الصغيرة: ترتيب المجموعات عمودياً */
+        @media (max-width: 800px) {
+            :root { --card-w: min(300px, 82vw); --card-h: 160px; }
+            .table { flex-direction: column; gap: 36px; }
+            .card-front, .card-back { font-size: 1.05rem; }
+            .card.removed { transform: translateY(-300px) rotate(20deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎮 تحدي سبيستون: الـ 90 سؤالاً 🎮</h1>
+
+    <div class="table">
+        <div class="stack-container">
+            <span class="stack-label label-white">الأبيض (سهل)</span>
+            <div class="stack" id="white-stack"></div>
+            <div class="counter" id="white-count"></div>
+        </div>
+
+        <div class="stack-container">
+            <span class="stack-label label-gray">الرمادي (متوسط)</span>
+            <div class="stack" id="gray-stack"></div>
+            <div class="counter" id="gray-count"></div>
+        </div>
+
+        <div class="stack-container">
+            <span class="stack-label label-black">الأسود (صعب)</span>
+            <div class="stack" id="black-stack"></div>
+            <div class="counter" id="black-count"></div>
+        </div>
+    </div>
+
+    <button class="reset" id="reset-btn">🔄 إعادة اللعب</button>
+
+    <script>
+        const gameData = {
+            white: [
+                {q: "ما اسم كوكب الفتيات؟", a: "زمردة"}, {q: "من هو القط الذي يطارد جيري؟", a: "توم"},
+                {q: "ما هو كوكب القوة والرياضة؟", a: "رياضة"}, {q: "من هو المحقق الصغير؟", a: "كونان"},
+                {q: "ما اسم كوكب الضحك؟", a: "كوميديا"}, {q: "من هو صديق عبقور المفضل؟", a: "نوبي"},
+                {q: "ما اسم كوكب التاريخ؟", a: "تاريخ"}, {q: "من هو بطل ون بيس؟", a: "لوفي"},
+                {q: "ما هو كوكب العلوم؟", a: "علوم"}, {q: "من يرتدي قناع باتمان؟", a: "بروس واين"},
+                {q: "ما اسم كوكب المغامرات؟", a: "مغامرات"}, {q: "من هي بطلة مسلسل سالي؟", a: "سالي"},
+                {q: "ما اسم صديق ميكي ماوس؟", a: "بندق"}, {q: "من هي الفتاة التي تبحث عن أمها؟", a: "ريمي"},
+                {q: "ما اسم كوكب الأكشن؟", a: "أكشن"}, {q: "ما اسم سيارة لاحق؟", a: "سونيك"},
+                {q: "ما اسم الطائر الأصفر تويتي؟", a: "تويتي"}, {q: "من هو بطل مسلسل القناص؟", a: "غون"},
+                {q: "ما اسم السنجابين الشهيرين؟", a: "تيك وتاك"}, {q: "من هو ملك الغابة؟", a: "تارزان"},
+                {q: "ما هو لون كوكب زمردة؟", a: "وردي"}, {q: "من هو صديق بوباي؟", a: "زيتونة"},
+                {q: "ما اسم كوكب الأفلام؟", a: "أفلام"}, {q: "من هو الفتى الفضائي؟", a: "بن 10"},
+                {q: "ما اسم بطل كرة السلة حسان؟", a: "حسان"}, {q: "من هو البطل ذو المطرقة؟", a: "ثور"},
+                {q: "ما اسم القطة البيضاء الصغيرة؟", a: "كيتي"}, {q: "ما هو كوكب الأطفال الصغار؟", a: "بون بون"},
+                {q: "من هو عدو باتمان اللدود؟", a: "الجوكر"}, {q: "ما اسم بطل الديجيتال الأول؟", a: "أمجد"}
+            ],
+            gray: [
+                {q: "ما اسم مدرب فريق الصقور؟", a: "غسان"}, {q: "من هو صديق روميو المقرب؟", a: "ألفريدو"},
+                {q: "ما اسم بلبل يمان المفضل؟", a: "الحصان المجنح"}, {q: "ما اسم المدربة في القناص؟", a: "بيسكي"},
+                {q: "ما هو الوحش داخل ناروتو؟", a: "الكيوبي"}, {q: "ما اسم خادم باتمان؟", a: "ألفريد"},
+                {q: "من هو قائد منظمة الصيد في القناص؟", a: "نيتيرو"}, {q: "ما اسم الفتاة التي تحب كونان؟", a: "ران"},
+                {q: "ما هي التقنية المفضلة لناروتو؟", a: "راسينغان"}, {q: "ما اسم العقار الذي قلص كونان؟", a: "APTX-4869"},
+                {q: "من هو صاحب ضربة 'النمر'؟", a: "بسام"}, {q: "ما اسم السيف العظيم في داي؟", a: "سيف داي"},
+                {q: "من هو بطل مسلسل بليتش؟", a: "إيتشيغو"}, {q: "ما اسم والد غون فريكس؟", a: "جين"},
+                {q: "ما اسم سفينة هزيم الرعد؟", a: "الرعد"}, {q: "من هي الفتاة التي في 'عهد الأصدقاء'؟", a: "بيانكا"},
+                {q: "ما اسم السلاح السري لغريندايزر؟", a: "رعد الفضاء"}, {q: "من هو بطل مسلسل دراغون بول؟", a: "غوكو"},
+                {q: "ما اسم القرد في ريمي؟", a: "جولي كور"}, {q: "من هي 'الليدي' أوسكار؟", a: "قائدة الحرس"},
+                {q: "ما اسم بلبل كمال؟", a: "الليث الأبيض"}, {q: "من هو عدو يوجي المفضل؟", a: "كايبا"},
+                {q: "ما اسم مدينة ريمي ولين؟", a: "لندن/باريس"}, {q: "من هو الفتى الذي يركب النمر؟", a: "بطل النمر"},
+                {q: "ما اسم منظمة عهد الأصدقاء؟", a: "منظمة الأيدي السوداء"}, {q: "من هي صاحبة القلب الذهبي؟", a: "سالي"},
+                {q: "ما اسم مهارة جدي في الديجيتال؟", a: "الصدق"}, {q: "من هو الفتى الذي يبحث عن والده؟", a: "غون"},
+                {q: "ما اسم فريق كرة السلة؟", a: "فريق الصقور"}, {q: "ما اسم الوحش الصغير لبوكيمون؟", a: "بيكاتشو"}
+            ],
+            black: [
+                {q: "ما الرمز الرقمي لكايتو كيد؟", a: "1412"}, {q: "ما التاريخ الدقيق لبدء بث سبيستون؟", a: "15 مارس 2000"},
+                {q: "ما اسم السفينة الفضائية الضخمة؟", a: "غونكاي"}, {q: "ما هو نوع 'الرين' لغون؟", a: "التعزيز"},
+                {q: "من هو مؤلف موسيقى سبيستون؟", a: "طارق العربي طرقان"}, {q: "كم عدد كواكب سبيستون؟", a: "10 كواكب"},
+                {q: "ما هو اسم المنظمة السوداء الحقيقي؟", a: "غير معروف رسمياً"}, {q: "من هي المغنية 'رشا رزق'؟", a: "صوت سبيستون"},
+                {q: "ما اسم والدة سينشي كودو؟", a: "يوكيكو"}, {q: "ما هي فصيلة دم لوفي؟", a: "F"},
+                {q: "من هو أول وحش واجهه يوجي؟", a: "التنين أزرق العينين"}, {q: "ما اسم التقنية المحرمة؟", a: "إيدو تينسي"},
+                {q: "من هو أقوى شخص في ون بيس؟", a: "اللحية البيضاء (سابقاً)"}, {q: "ما اسم سيف زورو الثالث؟", a: "وادو إيتشيمونجي"},
+                {q: "ما هو عمر كونان الحقيقي؟", a: "17 عاماً"}, {q: "ما اسم كوكب البرامج الوثائقية؟", a: "ثقافة (سابقاً)"},
+                {q: "من هو مبتكر شخصية المحقق كونان؟", a: "غوشو أوياما"}, {q: "ما اسم أول فيلم لسبيستون؟", a: "أفلام الأبطال"},
+                {q: "من هو بطل مسلسل 'هزيم الرعد'؟", a: "راجو"}, {q: "ما اسم الوحش الرقمي لزين؟", a: "بحرون"},
+                {q: "ما هو اسم مدرسة ناروتو؟", a: "الأكاديمية"}, {q: "من هو شقيق إيتاتشي؟", a: "ساسكي"},
+                {q: "ما هي العين الخاصة بكاكاشي؟", a: "الشارينجان"}, {q: "من هو ملك القراصنة السابق؟", a: "جول دي روجر"},
+                {q: "ما اسم فاكهة الشيطان للوفي؟", a: "غومو غومو نو مي"}, {q: "كم عدد أفراد عصابة الرداء الأسود؟", a: "أكثر من 10"},
+                {q: "ما اسم قلادة يوغي؟", a: "أحجية الألفية"}, {q: "من هو مبتكر كرة السلة حسان؟", a: "تاكيهيكو إينوي"},
+                {q: "ما اسم القوة في القناص؟", a: "النين"}, {q: "ما هو اسم سبيستون بالإنجليزية؟", a: "Spacetoon"}
+            ]
+        };
+
+        function init(color) {
+            const container = document.getElementById(`${color}-stack`);
+            const countLabel = document.getElementById(`${color}-count`);
+            const list = gameData[color];
+            container.innerHTML = '';
+            countLabel.innerText = `المتبقي: ${list.length}`;
+
+            list.forEach((data, index) => {
+                const card = document.createElement('div');
+                card.className = `card ${color}-card`;
+                card.style.zIndex = 100 - index;
+                card.style.top = `${index * 0.5}px`;
+                card.style.left = `${index * 0.5}px`;
+                card.innerHTML = `<div class="card-inner"><div class="card-front">${data.q}</div><div class="card-back">${data.a}</div></div>`;
+                card.onclick = function() {
+                    if (!this.classList.contains('flipped')) { this.classList.add('flipped'); }
+                    else {
+                        this.classList.add('removed');
+                        const current = container.querySelectorAll('.card:not(.removed)').length;
+                        countLabel.innerText = `المتبقي: ${current}`;
+                    }
+                };
+                container.appendChild(card);
+            });
+        }
+
+        function initAll() { init('white'); init('gray'); init('black'); }
+        initAll();
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            if (confirm('هل تريد إعادة اللعب من البداية؟')) initAll();
+        });
+
+        // تسجيل خدمة العمل دون اتصال
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>
